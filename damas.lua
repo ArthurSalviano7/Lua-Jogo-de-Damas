@@ -3,7 +3,6 @@ Game_loop = true
 
 
 function criarTabuleiro()
-    
     for i = 1, 8 do
         Tabuleiro[i] = {}
         for j = 1, 8 do
@@ -38,13 +37,10 @@ end --Fim do método printTabuleiro
 function verificarPecaPreta(posicaoPeca) --Metodo para verificar se a peça escolhida é a do jogador (preta)
     local linha = tonumber(posicaoPeca:sub(1,1))
     local coluna = tonumber(posicaoPeca:sub(2,2))
-    
-    if Tabuleiro[linha][coluna] == "b" or "B" then
-        return true
-    else
-        return false
-    end
+
+    return Tabuleiro[linha][coluna] == "b" or Tabuleiro[linha][coluna] == "B"
 end --Fim do metodo verificarPecaPreta
+
 
 function verificarMovimento(posicaoInicial, posicaoFinal) --Metodo para verificar se o movimento é válido
     local linhaInicial = tonumber(posicaoInicial:sub(1, 1))
@@ -53,17 +49,100 @@ function verificarMovimento(posicaoInicial, posicaoFinal) --Metodo para verifica
     local linhaFinal = tonumber(posicaoFinal:sub(1, 1))
     local colunaFinal = tonumber(posicaoFinal:sub(2, 2))
 
-    --A peça não pode andar para trás, a não ser que seja uma Dama ("B")
-    if linhaFinal > linhaInicial and Tabuleiro[linhaInicial][colunaInicial] ~= "B" then
+    -- verificar se a casa final está dentro do tabuleiro
+    if linhaFinal < 1 or linhaFinal > 8 or colunaFinal < 1 or colunaFinal > 8 then
         return false
-    elseif colunaInicial == colunaFinal then --O movimento não pode ser na mesma coluna
-        return false
-    elseif Tabuleiro[linhaFinal][colunaFinal] == "." then
-        return true
-    else return false
     end
+
+    -- verificar se a peça é normal
+    if Tabuleiro[linhaInicial][colunaInicial] == "b" then
+        
+        --A peça só pode andar para frente, e uma casa por vez (no momento de captura pode andar 2)
+        if linhaFinal < linhaInicial and (colunaFinal == colunaInicial + 1 or colunaFinal == colunaInicial + 2 or colunaFinal == colunaInicial - 1 or colunaFinal == colunaInicial - 2) then
+            if Tabuleiro[linhaFinal][colunaFinal] == "." then
+                return true
+            else
+                return false
+            end
+        else
+            return false
+        end
+    -- verificar se a peça é uma Dama
+    elseif Tabuleiro[linhaInicial][colunaInicial] == "B" then
+        local casasPossiveis = casasPossiveisDama(linhaInicial, colunaInicial)
+        --Verifica se a posicaoFinal está na diagonal da peça escolhida
+        for _, casa in ipairs(casasPossiveis) do
+            local linhaDestino = tonumber(casa:sub(1, 1))
+            local colunaDestino = tonumber(casa:sub(2, 2))
+            -- Se a casa final for possível para a Dama, o movimento é válido
+            if linhaFinal == linhaDestino and colunaFinal == colunaDestino then
+                if Tabuleiro[linhaFinal][colunaFinal] == "." then
+                    return true
+                else
+                    return false
+                end
+            end
+        end
+        return false
+    else
+        return false
+    end
+
 end --Fim do metodo verificarMovimento
 
+function casasPossiveisDama(linha, coluna)
+    local casasPossiveis = {}
+
+    -- verificar as diagonais para cima e para a direita
+    local l = linha + 1
+    local c = coluna + 1
+    while l <= 8 and c <= 8 do
+        if Tabuleiro[l][c] == "." then
+            table.insert(casasPossiveis, tostring(l) .. tostring(c))
+        else
+            break
+        end
+        l = l + 1
+        c = c + 1
+    end
+    -- verificar as diagonais para cima e para a esquerda
+    l = linha + 1
+    c = coluna - 1
+    while l <= 8 and c >= 1 do
+        if Tabuleiro[l][c] == "." then
+            table.insert(casasPossiveis, tostring(l) .. tostring(c))
+        else
+            break
+        end
+        l = l + 1
+        c = c - 1
+    end
+    -- verificar as diagonais para baixo e para a direita
+    l = linha - 1
+    c = coluna + 1
+    while l >= 1 and c <= 8 do
+        if Tabuleiro[l][c] == "." then
+            table.insert(casasPossiveis, tostring(l) .. tostring(c))
+        else
+            break
+        end
+        l = l - 1
+        c = c + 1
+    end
+    -- verificar as diagonais para baixo e para a esquerda
+    l = linha - 1
+    c = coluna - 1
+    while l >= 1 and c >= 1 do
+        if Tabuleiro[l][c] == "." then
+            table.insert(casasPossiveis, tostring(l) .. tostring(c))
+        else
+            break
+        end
+        l = l - 1
+        c = c - 1
+    end
+    return casasPossiveis
+end --Fim do método casasPossiveisDama
 
 function moverPeca(posicaoInicial, posicaoFinal)
     local linhaInicial = tonumber(posicaoInicial:sub(1, 1))
@@ -82,6 +161,8 @@ function moverPeca(posicaoInicial, posicaoFinal)
     io.write("Diferença L = " .. linhaDif .. "--" .. colunaDif)
 
 end --Fim do metodo moverPeca
+
+
 
 criarTabuleiro()
 printTabuleiro()
