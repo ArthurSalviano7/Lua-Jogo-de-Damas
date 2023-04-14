@@ -58,8 +58,8 @@ function verificarMovimento(posicaoInicial, posicaoFinal) --Metodo para verifica
     if Tabuleiro[linhaInicial][colunaInicial] == "b" then
         
         --A peça só pode andar para frente, e uma casa por vez (no momento de captura pode andar 2)
-        if linhaFinal < linhaInicial and (colunaFinal == colunaInicial + 1 or colunaFinal == colunaInicial + 2 or colunaFinal == colunaInicial - 1 or colunaFinal == colunaInicial - 2) then
-            if Tabuleiro[linhaFinal][colunaFinal] == "." then
+        if (colunaFinal == colunaInicial + 1 or colunaFinal == colunaInicial + 2 or colunaFinal == colunaInicial - 1 or colunaFinal == colunaInicial - 2) then
+            if ((linhaFinal == linhaInicial + 2 or linhaFinal == linhaInicial - 1 or linhaFinal == linhaInicial - 2) and (Tabuleiro[linhaFinal][colunaFinal] == ".")) then
                 return true
             else
                 return false
@@ -154,12 +154,53 @@ function moverPeca(posicaoInicial, posicaoFinal)
     local linhaDif = math.abs(linhaFinal - linhaInicial)
     local colunaDif = math.abs(colunaFinal - colunaInicial)
 
-    --Se o movimento for de mais de duas casas 
-    if linhaDif > 2 and Tabuleiro[linhaInicial][linhaFinal] ~= "B" then
-        
-    end
-    io.write("Diferença L = " .. linhaDif .. "--" .. colunaDif)
+    --Peça não é uma Dama
+    if (Tabuleiro[linhaInicial][colunaInicial] == "b") then
+        if linhaDif > 2 and colunaDif > 2 then
+            print("movimento invalido, insira novamente para onde deseja mover:")
+            posicaoFinal = io.read("l")
+            moverPeca(posicaoInicial, posicaoFinal)
+        elseif linhaDif == 1 and colunaDif == 1  then --Movimento simples de uma casa
+            Tabuleiro[linhaInicial][colunaInicial] = "."
+            Tabuleiro[linhaFinal][colunaFinal] = "b"
+        elseif linhaDif == 2 and colunaDif == 2 then --Movimento de captura
+            local linhaCaptura = (linhaInicial + linhaFinal)/2
+            local colunaCaptura = (colunaInicial + colunaFinal)/2
 
+            if Tabuleiro[linhaCaptura][colunaCaptura] == "w" or Tabuleiro[linhaCaptura][colunaCaptura] == "W" then
+                Tabuleiro[linhaInicial][colunaInicial] = "."
+                Tabuleiro[linhaCaptura][colunaCaptura] = "."
+                Tabuleiro[linhaFinal][colunaFinal] = "b"
+            else
+                print("movimento invalido, insira novamente para onde deseja mover:")
+                posicaoFinal = io.read("l")
+                moverPeca(posicaoInicial, posicaoFinal)
+            end
+        end 
+    
+    --Peça é uma Dama
+    else
+        if linhaDif > 2 and colunaDif > 2 then
+            print("movimento invalido, insira novamente para onde deseja mover:")
+            posicaoFinal = io.read("l")
+            moverPeca(posicaoInicial, posicaoFinal)
+        elseif linhaDif == 1 and colunaDif == 1  then --Movimento simples de uma casa
+            Tabuleiro[linhaInicial][colunaInicial] = "."
+            Tabuleiro[linhaFinal][colunaFinal] = "b"
+        elseif linhaDif == 2 and colunaDif == 2 then --Movimento de captura
+            local linhaCaptura = (linhaInicial + linhaFinal)/2
+            local colunaCaptura = (colunaInicial + colunaFinal)/2
+
+            if Tabuleiro[linhaCaptura][colunaCaptura] == "w" or Tabuleiro[linhaCaptura][colunaCaptura] == "W" then
+                Tabuleiro[linhaCaptura][colunaCaptura] = "."
+                Tabuleiro[linhaFinal][colunaFinal] = "b"
+            else
+                print("movimento invalido, insira novamente para onde deseja mover:")
+                posicaoFinal = io.read("l")
+                moverPeca(posicaoInicial, posicaoFinal)
+            end
+        end
+    end
 end --Fim do metodo moverPeca
 
 
@@ -187,5 +228,6 @@ while Game_loop do
     end
     
     moverPeca(posicaoInicial, posicaoFinal) --Criar método moverPeca
-    io.write "teste"
+    
+    printTabuleiro()
 end 
