@@ -256,6 +256,39 @@ function moverPeca(posicaoInicial, posicaoFinal)
                 Tabuleiro[linhaInicial][colunaInicial] = "."
                 Tabuleiro[linhaCaptura][colunaCaptura] = "."
                 Tabuleiro[linhaFinal][colunaFinal] = "b"
+
+                --Verifica se a peça pode continuar capturando
+                local pecasCapturaveis = verificarCapturas(linhaFinal, colunaFinal)
+
+                --Fica em loop enquanto existir peças a serem capturadas
+                while pecasCapturaveis and #pecasCapturaveis > 0 do
+                    linhaInicial, colunaInicial = linhaFinal, colunaFinal
+                    printTabuleiro()
+                    print("Existem pecas a serem capturadas. Escolha uma delas:")
+                    for i, posicao in ipairs(pecasCapturaveis) do
+                        print(i .. ": " .. posicao)
+                    end
+                    local escolha = io.read("l")
+                    if tonumber(escolha) > 0 and tonumber(escolha) <= #pecasCapturaveis then
+                        posicaoFinal = tostring(pecasCapturaveis[tonumber(escolha)])
+                    else
+                        print("Escolha inválida. Tente novamente.")
+                    end
+
+                    Tabuleiro[linhaInicial][colunaInicial] = "."
+
+                    --Coloca a peça na nova posição
+                    linhaFinal = tonumber(posicaoFinal:sub(1, 1))
+                    colunaFinal = tonumber(posicaoFinal:sub(2, 2))
+                    Tabuleiro[linhaFinal][colunaFinal] = "b"
+                    --Retira a peça capturada
+                    local linhaCaptura = (linhaInicial + linhaFinal)/2
+                    local colunaCaptura = (colunaInicial + colunaFinal)/2
+                    Tabuleiro[linhaCaptura][colunaCaptura] = "."
+
+                    pecasCapturaveis = verificarCapturas(linhaFinal, colunaFinal)
+                end --Fim do while
+
             else
                 print("movimento invalido, insira novamente para onde deseja mover:")
                 posicaoFinal = io.read("l")
@@ -263,11 +296,70 @@ function moverPeca(posicaoInicial, posicaoFinal)
             end
         end 
     
-    --Peça é uma Dama Preta (incompleto)
+    --Peça é uma Dama Preta
     elseif (Tabuleiro[linhaInicial][colunaInicial] == "B") then
-        
-        Tabuleiro[linhaInicial][colunaInicial] = "."
-        Tabuleiro[linhaFinal][colunaFinal] = "B"
+        if linhaDif == colunaDif then --Movimento de captura
+            local linhaCaptura = linhaInicial
+            local colunaCaptura = colunaInicial
+    
+            while linhaCaptura ~= linhaFinal do
+                linhaCaptura = linhaCaptura + (linhaFinal - linhaInicial)/linhaDif
+                colunaCaptura = colunaCaptura + (colunaFinal - colunaInicial)/colunaDif
+    
+                if Tabuleiro[linhaCaptura][colunaCaptura] == "w" or Tabuleiro[linhaCaptura][colunaCaptura] == "W" then
+                    Tabuleiro[linhaCaptura][colunaCaptura] = "."
+                elseif Tabuleiro[linhaCaptura][colunaCaptura] ~= "." then
+                    print("movimento invalido, insira novamente para onde deseja mover:")
+                    posicaoFinal = io.read("l")
+                    moverPeca(posicaoInicial, posicaoFinal)
+                    return
+                end
+            end
+            
+            --capturou a peça e moveu para a linha desejada
+            Tabuleiro[linhaInicial][colunaInicial] = "."
+            Tabuleiro[linhaFinal][colunaFinal] = "B"
+
+            --Verifica se a peça pode continuar capturando
+            local pecasCapturaveis = verificarCapturasDama(linhaFinal, colunaFinal)
+
+            --Fica em loop enquanto existir peças a serem capturadas
+            while pecasCapturaveis and #pecasCapturaveis > 0 do
+                linhaInicial, colunaInicial = linhaFinal, colunaFinal
+                printTabuleiro()
+
+                print("Existem pecas a serem capturadas. Escolha uma delas:")
+                for i, posicao in ipairs(pecasCapturaveis) do --"posicao" e uma table contendo: {linhaDisponivel, colunaDisponivel, linhaInimigo, colunaInimigo}
+                    print(i .. ": " .. posicao[1] .. posicao[2])
+                end
+                local escolha = io.read("l")
+                if tonumber(escolha) > 0 and tonumber(escolha) <= #pecasCapturaveis then
+                    posicaoFinal = pecasCapturaveis[tonumber(escolha)]
+                else
+                    print("Escolha inválida. Tente novamente.")
+                end
+
+                Tabuleiro[linhaInicial][colunaInicial] = "."
+
+                --Coloca a peça na nova posição
+                linhaFinal = posicaoFinal[1]
+                colunaFinal = posicaoFinal[2]
+                Tabuleiro[linhaFinal][colunaFinal] = "B"
+
+                --Retira a peça capturada
+                local linhaCaptura = posicaoFinal[3]
+                local colunaCaptura = posicaoFinal[4]
+                Tabuleiro[linhaCaptura][colunaCaptura] = "."
+
+                posicaoFinal = linhaFinal .. colunaFinal
+
+                pecasCapturaveis = verificarCapturasDama(linhaFinal, colunaFinal)
+            end --Fim do while
+            
+        else --Movimento simples
+            Tabuleiro[linhaInicial][colunaInicial] = "."
+            Tabuleiro[linhaFinal][colunaFinal] = "B"
+        end
         
     --Peça não é dama e é branca
     elseif (Tabuleiro[linhaInicial][colunaInicial] == "w") then
@@ -318,11 +410,95 @@ function verificarSeDama(posicao)
     end
 end
 
+function verificarCapturas(linha, coluna)
+    local capturas = {}  -- lista de capturas possíveis a partir da posição dada
+    
+    -- verificar se é uma peça preta
+    if Tabuleiro[linha][coluna] == "b" then
+        
+        -- verificar se pode capturar para cima à esquerda
+        if linha >= 3 and coluna >= 3 then
+            local peca_meio = Tabuleiro[linha-1][coluna-1]
+            local peca_destino = Tabuleiro[linha-2][coluna-2]
+            if (peca_meio == "w" or peca_meio == "W") and peca_destino == "." then
+                table.insert(capturas, linha-2 .. coluna-2)
+            end
+        end
+        
+        -- verificar se pode capturar para cima à direita
+        if linha >= 3 and coluna <= 6 then
+            local peca_meio = Tabuleiro[linha-1][coluna+1]
+            local peca_destino = Tabuleiro[linha-2][coluna+2]
+            if (peca_meio == "w" or peca_meio == "W") and peca_destino == "." then
+                table.insert(capturas, linha-2 .. coluna+2)
+            end
+        end
+        
+        -- verificar se pode capturar para baixo à esquerda
+        if linha <= 6 and coluna >= 3 then
+            local peca_meio = Tabuleiro[linha+1][coluna-1]
+            local peca_destino = Tabuleiro[linha+2][coluna-2]
+            if (peca_meio == "w" or peca_meio == "W") and peca_destino == "." then
+                table.insert(capturas, linha+2 .. coluna-2)
+            end
+        end
+        
+        -- verificar se pode capturar para baixo à direita
+        if linha <= 6 and coluna <= 6 then
+            local peca_meio = Tabuleiro[linha+1][coluna+1]
+            local peca_destino = Tabuleiro[linha+2][coluna+2]
+            if (peca_meio == "w" or peca_meio == "W") and peca_destino == "." then
+                table.insert(capturas, linha+2 .. coluna+2)
+            end
+        end
+    end 
+    
+    return capturas
+end --Fim do método verificarCapturas()
+
+-- função que retorna uma lista de movimentos de captura disponíveis para uma dama
+function verificarCapturasDama(linha, coluna)
+    local capturas = {}
+    local direcoes = {{-1,-1}, {-1,1}, {1,-1}, {1,1}} -- direções possíveis
+
+    -- loop através das direções possíveis
+    for _, direcao in ipairs(direcoes) do
+        local i, j = linha + direcao[1], coluna + direcao[2]
+        local encontrouInimigo = false
+        local linhaInimigo, colunaInimigo
+
+        while i >= 1 and i <= 8 and j >= 1 and j <= 8 do
+            -- Se a posiçao atual é de uma peça preta, interrompe o loop e procura em outra direção
+            if Tabuleiro[i][j] == "B" or Tabuleiro[i][j] == "b" then
+                break
+            end
+
+            -- Se já encontrou peça branca e a posição atual está vazia, adiciona a lista de capturas
+            if Tabuleiro[i][j] == "." and encontrouInimigo then
+                table.insert(capturas, {i, j, linhaInimigo, colunaInimigo})
+            end
+
+            if Tabuleiro[i][j] == "W" or Tabuleiro[i][j] == "w" then
+                encontrouInimigo = true
+                linhaInimigo = i
+                colunaInimigo = j
+            end
+
+            -- move para a próxima posição na direção atual
+            i = i + direcao[1]
+            j = j + direcao[2]
+        end
+    end
+
+    return capturas
+end
+
 criarTabuleiro()
-printTabuleiro()
+
 
 --Loop principal do Jogo--
 while Game_loop do 
+    printTabuleiro()
     io.write("Qual peca deseja mover (numero da linha e coluna juntos)?\n")
     
     local posicaoInicial = io.read("l")
@@ -343,6 +519,4 @@ while Game_loop do
     end
     
     moverPeca(posicaoInicial, posicaoFinal)
-
-    printTabuleiro()
 end 
