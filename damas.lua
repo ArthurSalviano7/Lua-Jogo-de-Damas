@@ -9,7 +9,7 @@ function criarTabuleiro()
             if (i + j) % 2 == 0 then
                 if i < 4 then
                     Tabuleiro[i][j] = "w" --Coloca peças brancas (da máquina)
-                elseif i == 6 then
+                elseif i > 5 then
                     Tabuleiro[i][j] = "b" --Coloca peças pretas (do jogador)
                 else
                     Tabuleiro[i][j] = "." --Casas com "." indicam que a casa está vazia e é uma casa preta
