@@ -9,7 +9,7 @@ function criarTabuleiro()
             if (i + j) % 2 == 0 then
                 if i < 4 then
                     Tabuleiro[i][j] = "w" --Coloca peças brancas (da máquina)
-                elseif i > 5 then
+                elseif i == 6 then
                     Tabuleiro[i][j] = "b" --Coloca peças pretas (do jogador)
                 else
                     Tabuleiro[i][j] = "." --Casas com "." indicam que a casa está vazia e é uma casa preta
@@ -86,9 +86,15 @@ function verificarMovimento(posicaoInicial, posicaoFinal) --Metodo para verifica
 
     -- verifica se a peça é normal e branca
     elseif Tabuleiro[linhaInicial][colunaInicial] == "w" then
+        local linhaCaptura = (linhaInicial + linhaFinal)/2
+        local colunaCaptura = (colunaInicial + colunaFinal)/2
         if (colunaFinal == colunaInicial + 1 or colunaFinal == colunaInicial + 2 or colunaFinal == colunaInicial - 1 or colunaFinal == colunaInicial - 2) then
-            if ((linhaFinal == linhaInicial - 2 or linhaFinal == linhaInicial + 1 or linhaFinal == linhaInicial + 2) and (Tabuleiro[linhaFinal][colunaFinal] == ".")) then
+            if (linhaFinal == linhaInicial + 1  and (Tabuleiro[linhaFinal][colunaFinal] == ".")) then
                 return true
+            elseif ((linhaFinal == linhaInicial - 2) or (linhaFinal == linhaInicial + 2)) and Tabuleiro[linhaFinal][colunaFinal] == "." then
+                if (Tabuleiro[linhaCaptura][colunaCaptura] == "b" or Tabuleiro[linhaCaptura][colunaCaptura] == "B")  then
+                    return true
+                end
             else
                 return false
             end
@@ -386,11 +392,9 @@ function moverPeca(posicaoInicial, posicaoFinal)
                 while pecasCapturaveis and #pecasCapturaveis > 0 do
                     linhaInicial, colunaInicial = linhaFinal, colunaFinal
                     printTabuleiro()
-                    print("Existem pecas a serem capturadas. Escolha uma delas:")
-                    for i, posicao in ipairs(pecasCapturaveis) do
-                        print(i .. ": " .. posicao)
-                    end
-                    local escolha = io.read("l")
+                    
+                    local escolha = math.random(#pecasCapturaveis)
+                    io.write("\nCaptura multipla efetuada, posicao:\n" .. linhaInicial .. colunaInicial .. " para " .. pecasCapturaveis[tonumber(escolha)] .. "\n")
                     if tonumber(escolha) > 0 and tonumber(escolha) <= #pecasCapturaveis then
                         posicaoFinal = tostring(pecasCapturaveis[tonumber(escolha)])
                     else
@@ -449,11 +453,9 @@ function moverPeca(posicaoInicial, posicaoFinal)
                 linhaInicial, colunaInicial = linhaFinal, colunaFinal
                 printTabuleiro()
 
-                print("Existem pecas a serem capturadas. Escolha uma delas:")
-                for i, posicao in ipairs(pecasCapturaveis) do --"posicao" e uma table contendo: {linhaDisponivel, colunaDisponivel, linhaInimigo, colunaInimigo}
-                    print(i .. ": " .. posicao[1] .. posicao[2])
-                end
-                local escolha = io.read("l")
+                local escolha = math.random(#pecasCapturaveis)
+                io.write("\nCaptura multipla efetuada, posicao:\n" .. linhaInicial .. colunaInicial .. " para " .. pecasCapturaveis[tonumber(escolha)] .. "\n")
+                
                 if tonumber(escolha) > 0 and tonumber(escolha) <= #pecasCapturaveis then
                     posicaoFinal = pecasCapturaveis[tonumber(escolha)]
                 else
@@ -634,32 +636,165 @@ function verificarCapturasDama(linha, coluna)
     end
 
     return capturas
+end --Fim do metodo verificarCapturasDama()
+
+function verificarJogadas(posicaoInicial)
+    local linha = tonumber(posicaoInicial:sub(1, 1))
+    local coluna = tonumber(posicaoInicial:sub(2, 2))
+
+    local jogadas = {}
+
+    for i = 1, 8 do
+        for j = 1, 8 do
+            if Tabuleiro[i][j] == "." then
+                if verificarMovimento(posicaoInicial, i..j) then
+                    table.insert(jogadas, {posicaoInicial, i..j})
+                end
+            end
+        end
+    end
+
+    return jogadas
+end --Fim do metodo verificarJogadas
+
+function jogadaDaMaquina()
+    local jogadas = {}
+    local jogadasDeCaptura = {}
+    local jogadasPromocao = {}
+
+    for i = 1, 8  do
+        for j = 1, 8 do
+            if Tabuleiro[i][j] == "w" or Tabuleiro[i][j] == "W" then
+                local mov = verificarJogadas(i..j)
+                if #mov ~= 0 then
+                    for _, valor in ipairs(mov) do
+                        table.insert(jogadas, valor)
+                    end
+                end
+            end
+        end
+    end--Fim do for
+
+    -- Verifica se há jogadas de captura e adiciona a lista
+    if #jogadas ~= 0 then
+        for _, jogada in ipairs(jogadas) do
+            local posicaoInicial = jogada[1]
+            local posicaoFinal = jogada[2]
+            local linhaInicial = tonumber(posicaoInicial:sub(1, 1))
+            local colunaInicial = tonumber(posicaoInicial:sub(2, 2))
+
+            local linhaFinal = tonumber(posicaoFinal:sub(1, 1))
+            local colunaFinal = tonumber(posicaoFinal:sub(2, 2))
+            
+            -- Verifica se a peca atual está adjacente a uma peça inimiga, se estiver adiciona a lista de capturas
+            if linhaInicial ~= 1 and linhaInicial ~= 8 and colunaInicial ~= 1 and colunaInicial ~= 8 then
+                if ((Tabuleiro[linhaInicial-1][colunaInicial-1] == "b" or Tabuleiro[linhaInicial-1][colunaInicial-1] == "B") and Tabuleiro[linhaFinal][colunaFinal] == "."
+                and linhaFinal == linhaInicial - 2 and colunaFinal == colunaInicial - 2) then
+                    table.insert(jogadasDeCaptura, jogada)
+                elseif ((Tabuleiro[linhaInicial-1][colunaInicial+1] == "b" or Tabuleiro[linhaInicial-1][colunaInicial+1] == "B") and Tabuleiro[linhaFinal][colunaFinal] == "."
+                and linhaFinal == linhaInicial - 2 and colunaFinal == colunaInicial + 2) then
+                    table.insert(jogadasDeCaptura, jogada)
+                elseif ((Tabuleiro[linhaInicial+1][colunaInicial-1] == "b" or Tabuleiro[linhaInicial+1][colunaInicial-1] == "B") and Tabuleiro[linhaFinal][colunaFinal] == "."
+                and linhaFinal == linhaInicial + 2 and colunaFinal == colunaInicial - 2) then
+                    table.insert(jogadasDeCaptura, jogada)
+                elseif ((Tabuleiro[linhaInicial+1][colunaInicial+1] == "b" or Tabuleiro[linhaInicial+1][colunaInicial+1] == "B") and Tabuleiro[linhaFinal][colunaFinal] == "."
+                and linhaFinal == linhaInicial + 2 and colunaFinal == colunaInicial + 2) then
+                    table.insert(jogadasDeCaptura, jogada)
+                end
+            end
+            
+
+            -- Verifica se a posicaoFinal da peça é a última linha do tabuleiro
+            if linhaFinal == 8 and (Tabuleiro[linhaInicial][colunaInicial] == "w") then
+                -- Adiciona a jogada de virar Dama à lista
+                table.insert(jogadasPromocao, jogada)
+            end
+        end
+    else
+        io.write("Fim de Jogo!\nVitoria das pretas!!\n")
+        Game_loop = false
+    end
+    
+
+    for _, jogada in ipairs(jogadasDeCaptura) do
+        io.write(jogada[1] .. " para " .. jogada[2] .. "\n")
+    end
+
+    -- Se houver jogadas de captura, escolhe uma aleatória
+    if #jogadasDeCaptura > 0 then
+        return jogadasDeCaptura[math.random(#jogadasDeCaptura)]
+    end
+
+     -- Se houver jogadas de promocao, escolhe uma aleatória
+     if #jogadasPromocao > 0 then
+        return jogadasPromocao[math.random(#jogadasPromocao)]
+    end
+
+    return jogadas[math.random(#jogadas)]
+end --Fim do metodo jogadaDaMaquina()
+
+function verificarFimDeJogo()
+    local contPretas = 0
+    local contBrancas = 0
+
+    for i = 1, 8 do
+        for j = 1, 8 do
+            if Tabuleiro[i][j] == "b" or Tabuleiro[i][j] == "B" then
+                contPretas = contPretas + 1
+            elseif Tabuleiro[i][j] == "w" or Tabuleiro[i][j] == "W" then
+                contBrancas = contBrancas + 1
+            end        
+        end
+    end
+
+    if contPretas == 0 then
+        io.write("Fim de Jogo, voce perdeu!!")
+        Game_loop = false
+    end
+
+    if contBrancas == 0 then
+        io.write("Fim de Jogo, voce ganhou!!")
+        Game_loop = false
+    end
 end
 
 criarTabuleiro()
 
-
 --Loop principal do Jogo--
 while Game_loop do 
     printTabuleiro()
+    
     io.write("Qual peca deseja mover (numero da linha e coluna juntos)?\n")
     
-    local posicaoInicial = io.read("l")
+    local posicaoInicial = io.read()
 
     while (not verificarPeca(posicaoInicial)) do --Enquanto não selecionar peça preta ou branca jogo não prossegue
         print("peca invalida, insira novamente:")
-        posicaoInicial = io.read("l")
+        posicaoInicial = io.read()
     end
 
-    --Criar método para verificar se a peça escolhida pode movimentar-se para algum lugar--
+    if #verificarJogadas(posicaoInicial) == 0 then
+        io.write("\nNao existem jogadas disponiveis para essa peca\n")
+        goto continue
+    end
 
     io.write("Para onde deseja mover (numero da linha e coluna juntos)?\n")
-    local posicaoFinal = io.read("l")
+    local posicaoFinal = io.read()
     
     while (not verificarMovimento(posicaoInicial, posicaoFinal)) do --Enquanto não informar movimento válido, o jogo não prossegue
         print("Movimento invalido, insira novamente para onde deseja mover:")
-        posicaoFinal = io.read("l")
+        posicaoFinal = io.read()
     end
     
-    moverPeca(posicaoInicial, posicaoFinal)
+    moverPeca(posicaoInicial, posicaoFinal) --Movimento do jogador
+
+    verificarFimDeJogo()
+    
+    local jogada = jogadaDaMaquina()
+    io.write("\nJogada da maquina: " .. jogada[1] .. " para " .. jogada[2] .. "\n\n")
+    moverPeca(jogada[1], jogada[2])
+    
+    verificarFimDeJogo()
+
+    ::continue::
 end 
