@@ -714,11 +714,6 @@ function jogadaDaMaquina()
         io.write("Fim de Jogo!\nVitoria das pretas!!\n")
         Game_loop = false
     end
-    
-
-    for _, jogada in ipairs(jogadasDeCaptura) do
-        io.write(jogada[1] .. " para " .. jogada[2] .. "\n")
-    end
 
     -- Se houver jogadas de captura, escolhe uma aleatória
     if #jogadasDeCaptura > 0 then
