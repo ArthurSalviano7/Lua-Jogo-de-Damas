@@ -38,7 +38,7 @@ function verificarPeca(posicaoPeca) --Metodo para verificar se a peça escolhida
     local linha = tonumber(posicaoPeca:sub(1,1))
     local coluna = tonumber(posicaoPeca:sub(2,2))
 
-    return Tabuleiro[linha][coluna] == "b" or Tabuleiro[linha][coluna] == "B" or Tabuleiro[linha][coluna] == "w" or Tabuleiro[linha][coluna] == "W"
+    return Tabuleiro[linha][coluna] == "b" or Tabuleiro[linha][coluna] == "B"
 end --Fim do metodo verificarPecaPreta
 
 
@@ -758,12 +758,18 @@ criarTabuleiro()
 --Loop principal do Jogo--
 while Game_loop do 
     printTabuleiro()
+
+    local jogada = jogadaDaMaquina()
+    io.write("\nJogada da maquina: " .. jogada[1] .. " para " .. jogada[2] .. "\n\n")
+    moverPeca(jogada[1], jogada[2])
+
+    verificarFimDeJogo()
+    printTabuleiro()
     
     io.write("Qual peca deseja mover (numero da linha e coluna juntos)?\n")
-    
     local posicaoInicial = io.read()
 
-    while (not verificarPeca(posicaoInicial)) do --Enquanto não selecionar peça preta ou branca jogo não prossegue
+    while (not verificarPeca(posicaoInicial)) do --Enquanto não selecionar peça preta o jogo não prossegue
         print("peca invalida, insira novamente:")
         posicaoInicial = io.read()
     end
@@ -783,12 +789,6 @@ while Game_loop do
     
     moverPeca(posicaoInicial, posicaoFinal) --Movimento do jogador
 
-    verificarFimDeJogo()
-    
-    local jogada = jogadaDaMaquina()
-    io.write("\nJogada da maquina: " .. jogada[1] .. " para " .. jogada[2] .. "\n\n")
-    moverPeca(jogada[1], jogada[2])
-    
     verificarFimDeJogo()
 
     ::continue::
